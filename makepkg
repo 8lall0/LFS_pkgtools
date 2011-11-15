@@ -159,25 +159,25 @@ fi
 # Make sure external compression utility is available:
 case $EXTENSION in
 'tgz' | 'tar.gz' )
-  if ! which gzip 1> /dev/null 2> /dev/null ; then
+  if [ ! -x /tools/bin/gzip ] ; then
     echo "ERROR:  gzip compression utility not found in \$PATH."
     exit 3
   fi
   ;;
 'tbz' | 'tar.bz2' )
-  if ! which bzip2 1> /dev/null 2> /dev/null ; then
+  if [ ! -x /tools/bin/bzip2 ] ; then
     echo "ERROR:  bzip2 compression utility not found in \$PATH."
     exit 3
   fi
   ;;
 'tlz' | 'tar.lzma' )
-  if ! which lzma 1> /dev/null 2> /dev/null ; then
+  if [ ! -x /tools/bin/lzma ] ; then
     echo "ERROR:  lzma compression utility not found in \$PATH."
     exit 3
   fi
   ;;
 'txz' | 'tar.xz' )
-  if ! which xz 1> /dev/null 2> /dev/null ; then
+  if [ ! -x /tools/bin/xz ] ; then
     echo "ERROR:  xz compression utility not found in \$PATH."
     exit 3
   fi
