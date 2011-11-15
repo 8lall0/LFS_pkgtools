@@ -3,7 +3,8 @@ i have modified the pkgtool scripts to have t{g,z}x packaging support on LFS.
 This is ONLY for the toolchain system (for now..)
 
 Changelog:
-[CODE]upgradepkg:
+11.15.2011
+upgradepkg:
  - Removed /sbin when installpkg and removepkg are called (it calls installpkg and removepkg from the first dir of PATH, ergo /tools/bin)
  - Changed input of root dir (upgradepkg --root foo instead of ROOT=dir upgradepkg foo)
 installpkg:
