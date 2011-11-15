@@ -126,7 +126,8 @@ done
 # Return a package name that has been stripped of the dirname portion
 # and any of the valid extensions (only):
 pkgbase() {
-  PKGEXT=$(echo $1 | rev | cut -f 1 -d . | rev)
+  PKGEXT=$(echo $1 | awk '{ print substr( $1, length($1) - 3, length($1) ) }')
+  PKGEXT=$(echo $PKGEXT | cut -d . -f 2)
   case $PKGEXT in
   'tgz' )
     PKGRETURN=$(basename $1 .tgz)
