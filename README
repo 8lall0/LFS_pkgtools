@@ -1,0 +1,39 @@
+Hi guys,
+i have modified the pkgtool scripts to have t{g,z}x packaging support on LFS.
+This is ONLY for the toolchain system (for now..)
+
+Changelog:
+[CODE]upgradepkg:
+ - Removed /sbin when installpkg and removepkg are called (it calls installpkg and removepkg from the first dir of PATH, ergo /tools/bin)
+ - Changed input of root dir (upgradepkg --root foo instead of ROOT=dir upgradepkg foo)
+installpkg:
+ - Removed warn, infobox, terse, menu, ask, priority, tagfile, md5sum options (i think we don't need this, i keep just the --root)
+ - Adjusted output (i removed the slack-desc support)
+ - Removed tar control (tar-1.13 or tar-1.blahblah, is it really important?)
+removepkg:
+ - Changed input of root dir (removepkg --root foo instead of ROOT=dir removepkg foo)
+makepkg:
+ - Added auto-fixing non-gzipped pages (to have a slackware-style gzipping man and info)
+ - Removed description (same as installpkg)
+ - Added strip option (auto-stripping binaries with --strip y or -s y)[/CODE]
+
+I know that there are less flexible than original, but i think they are more useful than.
+
+Usage (if you don't know it):
+
+when you have to do "make install", just create a temporary dir (such as /tmp/foodir) and launch
+$ make install DESTDIR=/tmp/foo
+
+make the package with
+$ cd /tmp/foo
+$ makepkg -l y -c n -s y /root/foo-versionnumber-arch-build.txz (or tgz if you want to use gz compression, RECOMMENDED)
+
+and install it
+$installpkg --root $LFS /root/foo-versionnumber-arch-build.txz
+
+I don't think that pkgtool and explodepkg are needed (we're just compiling, DAMN!)
+Just copy the scripts in /tools/bin and launch a chmod +x on it.
+
+PS: In a second time, i'm going to modify pkgtool for using into the LFS main system to make it more comfortable ;)
+
+Every bug report and patch is well-accepted! :D
