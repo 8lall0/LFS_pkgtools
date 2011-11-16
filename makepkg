@@ -1,4 +1,4 @@
-#!/tools/bin/sh
+#!/bin/sh
 # Copyright 1994, 1998, 2008  Patrick Volkerding, Moorhead, Minnesota USA 
 # Copyright 2003  Slackware Linux, Inc.  Concord, CA USA
 # Copyright 2009  Patrick J. Volkerding, Sebeka, MN, USA
@@ -282,6 +282,37 @@ if [ "$STRIP" = "y" ]; then
   find . | xargs file | grep "current ar archive" | cut -f 1 -d : | xargs -r strip --strip-unneeded 2> /dev/null || true
 fi
 
+# Some more handy warnings:
+if [ -d usr/share/man ]; then
+  echo "WARNING:  /usr/share/man (with possibly not gzipped man pages) detected. Fixing it."
+  mv usr/share/man usr/man
+  (
+    cd usr/man
+    find . -type f -exec gzip -9 {} \;
+    for i in $( find . -type l )
+    do
+      ln -s $( readlink $i ).gz $i.gz
+      rm $i
+    done
+  )
+  rmdir usr/share 2> /dev/null || true
+fi
+
+if [ -d usr/share/info ]; then
+  echo "WARNING:  /usr/share/info (with possibly not gzipped info pages) detected. Fixing it."
+  mv usr/share/info usr/info
+  (
+    cd usr/info
+    find . -type f -exec gzip -9 {} \;
+    for i in $( find . -type l )
+    do
+      ln -s $( readlink $i ).gz $i.gz
+      rm $i
+    done
+  )
+  rmdir usr/share 2> /dev/null || true
+fi
+
 echo "Creating Slackware package:  ${TARGET_NAME}/${TAR_NAME}.${EXTENSION}"
 echo
 rm -f ${TARGET_NAME}/${TAR_NAME}.${EXTENSION}
@@ -331,37 +362,6 @@ find . -type f -name '*.gz' | while read file ; do
     fi
   fi
 done
-
-# Some more handy warnings:
-if [ -d usr/share/man ]; then
-  echo "WARNING:  /usr/share/man (with possibly not gzipped man pages) detected. Fixing it."
-  mv usr/share/man usr/man
-  (
-    cd usr/man
-    find . -type f -exec gzip -9 {} \;
-    for i in $( find . -type l )
-    do
-      ln -s $( readlink $i ).gz $i.gz
-      rm $i
-    done
-  )
-  rmdir usr/share 2> /dev/null || true
-fi
-
-if [ -d usr/share/info ]; then
-  echo "WARNING:  /usr/share/info (with possibly not gzipped info pages) detected. Fixing it."
-  mv usr/share/info usr/info
-  (
-    cd usr/info
-    find . -type f -exec gzip -9 {} \;
-    for i in $( find . -type l )
-    do
-      ln -s $( readlink $i ).gz $i.gz
-      rm $i
-    done
-  )
-  rmdir usr/share 2> /dev/null || true
-fi
 
 if find . | grep site_perl 1> /dev/null ; then
   echo "WARNING:  site_perl directory detected (this is fine for a local package build)"
