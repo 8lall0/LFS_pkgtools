@@ -1,0 +1,307 @@
+#!/bin/sh
+# Copyright 1994, 1998, 2000  Patrick Volkerding, Concord, CA, USA 
+# Copyright 2001, 2003  Slackware Linux, Inc., Concord, CA, USA
+# Copyright 2007, 2009, 2011  Patrick Volkerding, Sebeka, MN, USA 
+#
+# Modified by Savino Pio Liguori, ITALY, to made it usable with LFS
+#
+# All rights reserved.
+#
+# Redistribution and use of this script, with or without modification, is
+# permitted provided that the following conditions are met:
+#
+# 1. Redistributions of this script must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+#  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO
+#  EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+#  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+#  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+#  WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+#  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+#  ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+unset LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY \
+  LC_MESSAGES LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT \
+  LC_IDENTIFICATION LC_ALL
+LANG=C
+export LANG
+
+# Return a package name that has been stripped of the dirname portion
+# and any of the valid extensions (only):
+
+pkgbase() {
+  PKGEXT=$(echo $1 | awk '{ print substr( $1, length($1) - 3, length($1) ) }')
+  PKGEXT=$(echo $PKGEXT | cut -d . -f 2)
+  case $PKGEXT in
+  'tgz' )
+    PKGRETURN=$(basename $1 .tgz)
+    ;;
+  'tbz' )
+    PKGRETURN=$(basename $1 .tbz)
+    ;;
+  'tlz' )
+    PKGRETURN=$(basename $1 .tlz)
+    ;;
+  'txz' )
+    PKGRETURN=$(basename $1 .txz)
+    ;;
+  *)
+    PKGRETURN=$(basename $1)
+    ;;
+  esac
+  echo $PKGRETURN
+}
+
+# If installpkg encounters a problem, it will return a non-zero error code.
+# If it finds more than one problem (i.e. with a list of packages) you'll only
+# hear about the most recent one. :)
+# 1 = tar returned error code
+# 2 = corrupt compression envelope
+# 3 = does not end in .tgz
+# 4 = no such file
+# 5 = external compression utility missing
+# 99 = user abort from menu mode
+EXITSTATUS=0
+
+# Do not store md5sums by default:
+MD5SUM=0
+
+# So that we know what to expect...
+umask 022
+#New tar
+TAR=tar
+
+usage() {
+ cat << EOF
+Usage: installpkg [options] <package_filename>
+
+Installpkg is used to install a .t{gz,bz,lz,xz} package like this:
+   installpkg slackware-package-1.0.0-i486-1.tgz (or .tbz, .tlz, .txz)
+
+This is a modified version for LFS.
+
+options:      --root /mnt (install someplace else, like /mnt)
+
+EOF
+}
+
+# Eliminate whitespace function:
+crunch() {
+  while read FOO ; do
+    echo $FOO
+  done
+}
+
+package_name() {
+  STRING=$(pkgbase $1)
+  # Check for old style package name with one segment:
+  if [ "$(echo $STRING | cut -f 1 -d -)" = "$(echo $STRING | cut -f 2 -d -)" ]; then
+    echo $STRING
+  else # has more than one dash delimited segment
+    # Count number of segments:
+    INDEX=1
+    while [ ! "$(echo $STRING | cut -f $INDEX -d -)" = "" ]; do
+      INDEX=$(expr $INDEX + 1)
+    done
+    INDEX=$(expr $INDEX - 1) # don't include the null value
+    # If we don't have four segments, return the old-style (or out of spec) package name:
+    if [ "$INDEX" = "2" -o "$INDEX" = "3" ]; then
+      echo $STRING
+    else # we have four or more segments, so we'll consider this a new-style name:
+      NAME=$(expr $INDEX - 3)
+      NAME="$(echo $STRING | cut -f 1-$NAME -d -)"
+      echo $NAME
+      # cruft for later ;)
+      #VER=$(expr $INDEX - 2)
+      #VER="$(echo $STRING | cut -f $VER -d -)"
+      #ARCH=$(expr $INDEX - 1)
+      #ARCH="$(echo $STRING | cut -f $ARCH -d -)"
+      #BUILD="$(echo $STRING | cut -f $INDEX -d -)"
+    fi
+  fi
+}
+
+# Parse root option:
+MODE=install # standard text-mode
+while [ 0 ]; do
+  if [ "$1" = "-root" -o "$1" = "--root" ]; then
+    if [ "$2" = "" ]; then
+      usage
+      exit
+    fi
+    ROOT="$2"
+    shift 2
+  else
+    break
+  fi
+done
+
+# Set the prefix for the package database directories (packages, scripts).
+ADM_DIR="$ROOT/var/log"
+# If the directories don't exist, "initialize" the package database:
+for PKGDBDIR in packages removed_packages removed_scripts scripts setup ; do
+  if [ ! -d $ADM_DIR/$PKGDBDIR ]; then
+    rm -rf $ADM_DIR/$PKGDBDIR # make sure it's not a symlink or something stupid
+    mkdir -p $ADM_DIR/$PKGDBDIR
+    chmod 755 $ADM_DIR/$PKGDBDIR 
+  fi
+done
+
+# Make sure there's a proper temp directory:
+TMP=$ADM_DIR/setup/tmp
+# If the $TMP directory doesn't exist, create it:
+if [ ! -d $TMP ]; then
+  rm -rf $TMP # make sure it's not a symlink or something stupid
+  mkdir -p $TMP
+  chmod 700 $TMP # no need to leave it open
+fi
+
+# usage(), exit if called with no arguments:
+if [ $# = 0 ]; then
+  usage;
+  exit
+fi
+
+# Main loop:
+for package in $* ; do
+
+  # Simple package integrity check:
+  if [ ! -f $package ]; then
+    EXITSTATUS=4
+    if [ "$MODE" = "install" ]; then
+      echo "Cannot install $package:  file not found"
+    fi
+    continue;
+  fi
+
+  # "shortname" isn't really THAT short...
+  # it's just the full name without ".t{gz,bz,lz,xz}"
+  shortname="$(pkgbase $package)"
+  packagedir="$(dirname $package)"
+  # This is the base package name, used for grepping tagfiles and descriptions:
+  packagebase="$(package_name $shortname)"
+
+  # Reject package if it does not end in '.t{gz,bz,lz,xz}':
+  if [ "$shortname" = "$(basename $package)" ]; then
+    EXITSTATUS=3
+    if [ "$MODE" = "install" ]; then
+      echo "Cannot install $package:  file does not end in .tgz, .tbz, .tlz, or .txz"
+    fi
+    continue;
+  fi
+
+  # Determine extension:
+  packageext=$(echo $package | awk '{ print substr( $0, length($0) - 3, length($0) ) }')
+  packageext=$(echo $packageext | cut -d . -f 2)
+
+  # Determine compressor utility:
+  case $packageext in
+  'tgz' )
+    packagecompression=gzip
+    ;;
+  'tbz' )
+    packagecompression=bzip2
+    ;;
+  'tlz' )
+    packagecompression=lzma
+    ;;
+  'txz' )
+    packagecompression=xz
+    ;;
+  esac
+
+  # Test presence of external compression utility:
+  if ! $packagecompression --help 1> /dev/null 2> /dev/null ; then
+    EXITSTATUS=5
+    if [ "$MODE" = "install" ]; then
+      echo "Cannot install $package:  external compression utility $packagecompression missing"
+    fi
+    continue;
+  fi
+
+  # Figure out some package information, like the compressed and uncompressed
+  # sizes, and where to find the package description:
+  COMPRESSED="$(du -sh "$(readlink -f $package)" | cut -f 1)"
+
+  # Test tarball integrity and get uncompressed package size:
+  if [ "$MODE" = "install" ]; then
+    echo "Verifying package $(basename $package)."
+  fi
+  cat $package | $packagecompression -dc | dd 2> $TMP/tmpsize$$ | $TAR tf - 1> $TMP/tmplist$$ 2> /dev/null
+  TARERROR=$?
+  if [ ! "$TARERROR" = "0" ]; then
+    EXITSTATUS=1 # tar file corrupt
+    if [ "$MODE" = "install" ]; then
+      echo "Unable to install $package:  tar archive is corrupt (tar returned error code $TARERROR)"
+    fi
+    rm -f $TMP/tmplist$$ $TMP/tmpsize$$
+    continue
+  fi
+  UNCOMPRESSED="$(expr $(cat $TMP/tmpsize$$ | head -n 1 | cut -f 1 -d +) / 2)"
+  if [ $UNCOMPRESSED -lt 1024 ]; then
+    UNCOMPRESSED="${UNCOMPRESSED}K"
+  elif [ $UNCOMPRESSED -lt 10239 ]; then
+    UNCOMPRESSED="$(expr $UNCOMPRESSED \* 1000 / 1024 | cut -b1).$(expr $UNCOMPRESSED \* 1000 / 1024 | cut -b2)M"
+  else
+    UNCOMPRESSED="$(expr $UNCOMPRESSED / 1024)M"
+  fi
+  rm -f $TMP/tmpsize$$
+
+  # Emit information to the console:
+  echo "Installing package $(basename $package):"
+
+  # Make sure there are no symbolic links sitting in the way of
+  # incoming package files:
+  cat $TMP/tmplist$$ | grep -v "/$" | while read file ; do
+    if [ -L "$ROOT/$file" ]; then
+      rm -f "$ROOT/$file"
+    fi
+  done
+  rm -f $TMP/tmplist$$
+
+  # Write the package file database entry and install the package:
+  echo "PACKAGE NAME:     $shortname" > $ADM_DIR/packages/$shortname
+  echo "COMPRESSED PACKAGE SIZE:     $COMPRESSED" >> $ADM_DIR/packages/$shortname
+  echo "UNCOMPRESSED PACKAGE SIZE:     $UNCOMPRESSED" >> $ADM_DIR/packages/$shortname
+  echo "PACKAGE LOCATION: $package" >> $ADM_DIR/packages/$shortname
+  echo "FILE LIST:" >> $ADM_DIR/packages/$shortname
+  echo "./" >>  $ADM_DIR/packages/$shortname
+  ( cd $ROOT/ ; $packagecompression -dc | $TAR -xlUvpf - ) < $package >> $TMP/$shortname 2> /dev/null
+  cat $TMP/$shortname | sed 's@^./@@g' | sed '1d' > $TMP/$shortname
+  cat $TMP/$shortname | sed '/^install/d' >> $ADM_DIR/packages/$shortname
+  rm -f $TMP/$shortname
+  
+  # It's a good idea to make sure those newly installed libraries
+  # are properly activated for use:
+  if [ -x /sbin/ldconfig ]; then
+    /sbin/ldconfig
+  fi
+
+  if [ -f $ROOT/install/doinst.sh ]; then
+    if [ "$MODE" = "install" ]; then
+      echo "Executing install script for $(basename $package)."
+    fi
+    ( cd $ROOT/ ; sh install/doinst.sh -install; )
+  fi 
+  # Clean up the mess...
+  if [ -d $ROOT/install ]; then
+    if [ -r $ROOT/install/doinst.sh ]; then
+      cp $ROOT/install/doinst.sh $ADM_DIR/scripts/$shortname
+      chmod 755 $ADM_DIR/scripts/$shortname
+    fi
+    # /install/doinst.sh is reserved location for the package system.
+    ( cd $ROOT/install ; rm -f doinst.sh 1> /dev/null 2>&1 )
+    rmdir $ROOT/install 1> /dev/null 2>&1
+  fi
+
+  rm -f $TMP/tmpmsg$$ $TMP/reply$$
+  if [ "$MODE" = "install" ]; then
+    echo "Package $(basename $package) installed."
+  fi
+done
+
+exit $EXITSTATUS
