@@ -16,7 +16,7 @@ $ cd /tmp/foo
 $ makepkg -l y -c n -s y /root/foo-versionnumber-arch-build.txz (or tgz if you want to use gz compression, RECOMMENDED)
 
 and install it
-$installpkg --root $LFS /root/foo-versionnumber-arch-build.txz
+$ installpkg --root $LFS /root/foo-versionnumber-arch-build.txz
 
 I don't think that pkgtool and explodepkg are needed (we're just compiling, DAMN!)
 Just copy the scripts in /tools/bin and launch a chmod +x on it.
