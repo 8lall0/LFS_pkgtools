@@ -1,75 +1,6 @@
-#!/bin/sh
+#!/tools/bin/sh
 # Slackware remove package script
 #
-# Sat Apr 25 21:18:53 UTC 2009 (12.34567890b)
-# Converted to use new pkgbase() function to remove pathname and
-# valid package extensions.
-#
-# Revision 12.34567890 Sun Apr  5 20:59:32 CDT 2009 <volkerdi>
-# - Support packages with the extensions: .tgz, .tbz, .tlz, .txz
-#
-# Revision 1.9 Wed Oct 31 14:04:28 CDT 2007 volkerding
-# - Fix problem removing packages with a large number of fields.
-#   Thanks to Niki Kovacs for noticing this, and to Piter Punk
-#   for the patch.
-# - Use LC_ALL=C locale, which is much faster with "sort".
-#   Thanks to Tsomi.
-# - Don't try to remove any package that starts with '-'.  This
-#   is not a proper package name (usually a typo), and results
-#   in the package database being broken.  Thanks to Jef Oliver.
-# - Patched cat_except() to allow the last Slackware package on
-#   a partition to be removed (using ROOT=, of course)
-#   Thanks to Selkfoster for the patch, and to everyone else who
-#   proposed solutions before.  This issue really wasn't given
-#   the highest priority before, but I figured while I'm in here...
-#
-# Revision 1.8 Thu Nov 22 14:00:13 PST 2001 volkerding Rel $
-# - Move $TMP underneath $ROOT
-# - Understand the idea of a base package name, so that packages
-#   can be removed with any of these notations:
-#   removepkg foo-1.0-i386-1.tgz
-#   removepkg foo-1.0-i386-1
-#   removepkg foo.tgz
-#   removepkg foo
-#
-# Revision 1.7  2001/03/30 12:36:28 volkerding
-# - Strip extra ".tgz" from input names.
-#
-# Revision 1.6  1999/03/25 18:26:41 volkerding
-# - Use external $ROOT variable, like installpkg.
-#
-# Revision 1.5.1  1998/03/18 15:37:28 volkerding
-# - Since removepkg is always run by root, the temp directory has been
-#   moved from /tmp to a private directory to avoid symlink attacks from
-#   malicious users.
-#
-# Revision 1.5  1997/06/26 12:09:53  franke
-# - Fixed old bug in TRIGGER regex setting
-# - -preserve/-copy options now preserve non-unique files
-#   and empty directories also
-#
-# Revision 1.4  1997/06/09 13:21:36  franke
-# - Package file preserve (-preserve, -copy) added.
-# - Don't execute "rm -rf" lines from doinst.sh, removing links explicit.
-# - Warning on no longer existing files added.
-# - Warning on files changed after package installation added.
-# - Intermediate file preserve (-keep) added.
-# - Check for required files/links now done on a combined list.
-# - Write access to /var/log/{packages,scripts} no longer necessary for -warn.
-#
-# Revision 1.3  1997/06/08 13:03:05  franke
-# Merged with revision 1.1.1.1
-#
-# Revision 1.2  1996/06/01 20:04:26  franke
-# Delete empty directories & formated manual pages added
-#
-# Revision 1.1.1.1  1995/12/18 21:20:42  volkerding
-# Original Version from Slackware 3.1
-#
-# Revision 1.1  1995/06/05 22:49:11  volkerding
-# Original Version from Slackware 3.0
-#
-
 # Copyright 1994, 1995, 1998  Patrick Volkerding, Moorhead, Minnesota USA
 # Copyright 2001, Slackware Linux, Inc., Concord, CA USA
 # Copyright 2009  Patrick J. Volkerding, Sebeka, MN, USA
@@ -173,8 +104,8 @@ PRES_DIR=$TMP/preserved_packages
 # removed when ROOT= is used:
 cat_except() {
   ( cd "$1" && \
-    if [ $(find . -type f -maxdepth 1 | wc -l) -ne 1 ]; then
-      cat $(find . -type f -maxdepth 1 | grep -v "$2")
+    if [ $(find . -maxdepth 1 -type f | wc -l) -ne 1 ]; then
+      cat $(find . -maxdepth 1 -type f | grep -v "$2")
     fi
   )
 }
