@@ -23,65 +23,12 @@
 #  WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 #  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 #  ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Fri Apr 22 20:45:45 UTC 2011
-# A stronger formula is needed to regularize output that will be parsed.
 
 unset LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY \
   LC_MESSAGES LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT \
   LC_IDENTIFICATION LC_ALL
 LANG=C
 export LANG
-
-# Thu Nov 15 11:17:00 GMT+1 2011
-# Removed 
-# - warn
-# - infobox
-# - terse
-# - menu
-# - ask
-# - priority
-# - tagfile
-# - md5sum
-# for LFS usage. We don't need it ;)
-#
-# Thu Apr 21 17:31:29 UTC 2011
-# Set LC_MESSAGES=C to avoid output parsing issues.
-# Might as well do that right now.
-#LC_MESSAGES=C
-#export LC_MESSAGES
-#
-# Sat Apr 25 21:18:53 UTC 2009
-# Converted to use new pkgbase() function to remove pathname and
-# valid package extensions.
-#
-# Sat Apr  4 22:58:06 CDT 2009
-# Support additional compression formats if the supporting utilities exist:
-# .tbz - bzip2
-# .tlz - lzma
-# .txz - xz (also LZMA)
-# And of course, .tgz (gzip) is not going anywhere.  :-) <volkerdi>
-# Add command switches to determine the uncompressed package size even if
-# that will slow things down, and to add the package's md5sum to the
-# metadata stored in /var/log/packages/.
-#
-# Fri Dec 21 17:21:35 CST 2007
-# Added a patch from Johnny Morano to work around package removal issues
-# caused by packages that do not comply with FHS combined with a grep
-# regex error in installpkg.  Any package with a single-letter top-
-# level directory could not be removed.
-#
-# Shortened some of the top-line dialog output to avoid overflowing the
-# textbox (needed as some of the packages, especially in X, have very
-# long base package names now).  <pjv>
-#
-# Sun Nov 26 12:38:25 CST 1995
-# Added patch from Glenn Moloney <glenn@physics.unimelb.edu.au> to allow
-# packages to be installed to directories other than /.
-#
-# Wed Mar 18 15:15:51 CST 1998
-# Changed $TMP directory to /var/log/setup/tmp, and chmod'ed it 700 to close
-# some security holes.
 
 # Return a package name that has been stripped of the dirname portion
 # and any of the valid extensions (only):

@@ -4,6 +4,9 @@
 # Copyright 1994, 1995, 1998  Patrick Volkerding, Moorhead, Minnesota USA
 # Copyright 2001, Slackware Linux, Inc., Concord, CA USA
 # Copyright 2009  Patrick J. Volkerding, Sebeka, MN, USA
+#
+# Modified by Savino Pio Liguori, ITALY, to made it usable with LFS
+#
 # All rights reserved.
 #
 # Redistribution and use of this script, with or without modification, is 
@@ -389,4 +392,3 @@ else
 fi
 
 remove_packages $*
-

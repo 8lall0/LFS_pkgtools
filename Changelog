@@ -1,0 +1,24 @@
+Changelog:
+
+0.2
+installpkg:
+ - Adjusted the output in /var/log/packages
+makepkg:
+ - Fixed auto man-pages fixing.
+removepkg:
+ - Fixed pkg extension
+
+0.1
+upgradepkg:
+ - Removed /sbin when installpkg and removepkg are called (it calls installpkg and removepkg from the first dir of PATH, ergo /tools/bin)
+ - Changed input of root dir (upgradepkg --root foo instead of ROOT=dir upgradepkg foo)
+installpkg:
+ - Removed warn, infobox, terse, menu, ask, priority, tagfile, md5sum options (i think we don't need this, i keep just the --root)
+ - Adjusted output (i removed the slack-desc support)
+ - Removed tar control (tar-1.13 or tar-1.blahblah, is it really important?)
+removepkg:
+ - Changed input of root dir (removepkg --root foo instead of ROOT=dir removepkg foo)
+makepkg:
+ - Added auto-fixing non-gzipped pages (to have a slackware-style gzipping man and info)
+ - Removed description (same as installpkg)
+ - Added strip option (auto-stripping binaries with --strip y or -s y)
