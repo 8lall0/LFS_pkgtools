@@ -1,0 +1,5 @@
+TODO
+removepkg:
+ - Fix the output "WARNING: Unique directory /./ contains new files" (it doesn't affect anything, but it is ugly)
+pkgtools:
+ - Remove all the useless things :P
