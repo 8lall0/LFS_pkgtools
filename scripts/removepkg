@@ -212,7 +212,9 @@ delete_dirs() {
         echo "  --> Deleting empty directory $ROOT/$DIR"
         rmdir "$ROOT/$DIR"
       else
-        echo "WARNING: Unique directory $ROOT/$DIR contains new files"
+        if [ ! "$DIR" = "./" ]; then
+          echo "WARNING: Unique directory $ROOT/$DIR contains new files"
+        fi
       fi
     else
      echo "  --> $ROOT/$DIR (dir) would be deleted if empty"

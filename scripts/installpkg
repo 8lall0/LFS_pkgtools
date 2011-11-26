@@ -271,8 +271,7 @@ for package in $* ; do
   echo "FILE LIST:" >> $ADM_DIR/packages/$shortname
   echo "./" >>  $ADM_DIR/packages/$shortname
   ( cd $ROOT/ ; $packagecompression -dc | $TAR -xlUvpf - ) < $package >> $TMP/$shortname 2> /dev/null
-  cat $TMP/$shortname | sed 's@^./@@g' | sed '1d' > $TMP/$shortname
-  cat $TMP/$shortname | sed '/^install/d' >> $ADM_DIR/packages/$shortname
+  cat $TMP/$shortname | sed -e 's@^./@@g' -e '/^install/d' -e '/^$/d' >> $ADM_DIR/packages/$shortname
   rm -f $TMP/$shortname
   
   # It's a good idea to make sure those newly installed libraries

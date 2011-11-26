@@ -1,9 +1,15 @@
-This is a package that create the root tree of directories. It's a txz package, a Slackware-style package.
+This is a package that create the root tree of directories and mount /dev, /sys and /proc. It's a txz package, a Slackware-style package.
 To install this you have to arrive at the end of the Chapter 5 of LFS book ( NOT BEFORE, NOT AFTER!! ) :
 
 1) download all the scripts from git and put they on /tools/bin ( except of pkgtool ) and the .txz file.
 2) make executable all of them ( chmod +x /tools/bin/{installpkg,removepkg,makepkg,upgradepkg,explodepkg} )
 3) check if /tools/bin is at the beginning of your $PATH ( IMPORTANT!!! )
-4) install the package with $LFS such as root ( installpkg --root=$LFS lfs_essentials-0.1-noarch-1.txz )
+4) check if $LFS if set in the root environment ( if not, the internal script does not mount anything )
+4) install the package with $LFS such as root ( installpkg --root $LFS lfs_essentials-0.2-noarch-1.txz )
 
-Now you can continue with the chapter 6, BUT jump the 6.5.1 since the "cat > /etc/group << EOF"
+Now you can continue with the chapter 6.7 after the chroot command:
+
+chroot "$LFS" /tools/bin/env -i \
+HOME=/root TERM="$TERM" PS1='\u:\w\$ ' \
+PATH=/bin:/usr/bin:/sbin:/usr/sbin:/tools/bin \
+/tools/bin/bash --login +h
